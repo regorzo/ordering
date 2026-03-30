@@ -1,0 +1,15 @@
+<h1>Your Cart</h1>
+
+{% for item in items %}
+  <div>
+    <p>{{ item.name }} - £{{ item.price }}</p>
+
+    <a href="/remove-from-cart/{{ item.id }}">Remove</a>
+  </div>
+{% endfor %}
+
+<form action="/checkout" method="POST">
+  <button>Checkout</button>
+</form>
+
+<a href="/products">Back to Products</a>

@@ -1,0 +1,13 @@
+<h1>Your Orders</h1>
+
+{% for o in orders %}
+  <h3>Order #{{ o['order'].id }}</h3>
+
+  <ul>
+    {% for item in o['items'] %}
+      <li>{{ item.name }} - {{ item.quantity }} x £{{ item.price }}</li>
+    {% endfor %}
+  </ul>
+{% endfor %}
+
+<a href="/products">Back to shop</a>

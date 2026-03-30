@@ -1,0 +1,74 @@
+import sqlite3
+import os
+
+DB_NAME = "products.db"
+
+# Delete old DB (fresh start)
+if os.path.exists(DB_NAME):
+    os.remove(DB_NAME)
+    print("Old database deleted.")
+
+conn = sqlite3.connect(DB_NAME)
+cursor = conn.cursor()
+
+print("Creating tables...")
+
+# PRODUCTS
+cursor.execute("""
+CREATE TABLE products (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL,
+    price REAL NOT NULL,
+    description TEXT
+)
+""")
+
+# CART
+cursor.execute("""
+CREATE TABLE cart_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_email TEXT NOT NULL,
+    product_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL
+)
+""")
+
+# ORDERS
+cursor.execute("""
+CREATE TABLE orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_email TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+)
+""")
+
+# ORDER ITEMS
+cursor.execute("""
+CREATE TABLE order_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    order_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL
+)
+""")
+
+print("Tables created.")
+
+# ADD TEST PRODUCTS
+print("Adding test products...")
+
+cursor.executemany("""
+INSERT INTO products (name, price, description)
+VALUES (?, ?, ?)
+""", [
+    ("Phone Repair Kit", 19.99, "Fix your phone"),
+    ("Battery Pack", 29.99, "Portable charger"),
+    ("Screen Protector", 9.99, "Protect your screen"),
+    ("Charging Cable", 7.99, "Fast charging cable"),
+    ("Wireless Charger", 24.99, "Charge without wires")
+])
+
+conn.commit()
+conn.close()
+
+print("✅ Database fully reset and ready!")

@@ -1,0 +1,119 @@
+# ---------- PRODUCTS PAGE ----------
+@app.route('/products')
+def product_view():
+    conn = get_db_products()
+    products = conn.execute("SELECT * FROM products").fetchall()
+    conn.close()
+    return render_template('products.html', products=products)
+
+
+# ---------- ADD TO CART ----------
+@app.route('/add-to-cart', methods=['POST'])
+@login_required
+def add_to_cart():
+    product_id = request.form.get('product_id')
+    user_email = session.get('email')
+
+    conn = get_db_products()
+    conn.execute("""
+        INSERT INTO cart_items (user_email, product_id, quantity)
+        VALUES (?, ?, 1)
+    """, (user_email, product_id))
+    conn.commit()
+    conn.close()
+
+    flash("Added to cart!", "success")
+    return redirect(url_for('product_view'))
+
+
+# ---------- VIEW CART ----------
+@app.route('/cart')
+@login_required
+def cart():
+    user_email = session.get('email')
+    conn = get_db_products()
+
+    items = conn.execute("""
+        SELECT cart_items.id, products.name, products.price, cart_items.quantity
+        FROM cart_items
+        JOIN products ON cart_items.product_id = products.id
+        WHERE cart_items.user_email = ?
+    """, (user_email,)).fetchall()
+
+    conn.close()
+    return render_template('cart.html', items=items)
+
+
+# ---------- REMOVE FROM CART ----------
+@app.route('/remove-from-cart/<int:item_id>')
+@login_required
+def remove_from_cart(item_id):
+    conn = get_db_products()
+    conn.execute("DELETE FROM cart_items WHERE id = ?", (item_id,))
+    conn.commit()
+    conn.close()
+
+    flash("Item removed", "info")
+    return redirect(url_for('cart'))
+
+
+# ---------- CHECKOUT ----------
+@app.route('/checkout', methods=['POST'])
+@login_required
+def checkout():
+    user_email = session.get('email')
+    conn = get_db_products()
+
+    cursor = conn.execute(
+        "INSERT INTO orders (user_email) VALUES (?)",
+        (user_email,)
+    )
+    order_id = cursor.lastrowid
+
+    cart_items = conn.execute("""
+        SELECT * FROM cart_items WHERE user_email = ?
+    """, (user_email,)).fetchall()
+
+    for item in cart_items:
+        conn.execute("""
+            INSERT INTO order_items (order_id, product_id, quantity)
+            VALUES (?, ?, ?)
+        """, (order_id, item['product_id'], item['quantity']))
+
+    conn.execute("DELETE FROM cart_items WHERE user_email = ?", (user_email,))
+
+    conn.commit()
+    conn.close()
+
+    flash("Order placed!", "success")
+    return redirect(url_for('orders'))
+
+
+# ---------- ORDERS PAGE ----------
+@app.route('/orders')
+@login_required
+def orders():
+    user_email = session.get('email')
+    conn = get_db_products()
+
+    orders = conn.execute("""
+        SELECT * FROM orders WHERE user_email = ?
+    """, (user_email,)).fetchall()
+
+    order_data = []
+
+    for order in orders:
+        items = conn.execute("""
+            SELECT products.name, products.price, order_items.quantity
+            FROM order_items
+            JOIN products ON order_items.product_id = products.id
+            WHERE order_items.order_id = ?
+        """, (order['id'],)).fetchall()
+
+        order_data.append({
+            'order': order,
+            'items': items
+        })
+
+    conn.close()
+    return render_template('orders.html', orders=order_data)

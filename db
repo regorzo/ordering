@@ -3,11 +3,6 @@ import os
 
 DB_NAME = "products.db"
 
-# Delete old DB (fresh start)
-if os.path.exists(DB_NAME):
-    os.remove(DB_NAME)
-    print("Old database deleted.")
-
 conn = sqlite3.connect(DB_NAME)
 cursor = conn.cursor()
 
@@ -54,21 +49,7 @@ CREATE TABLE order_items (
 
 print("Tables created.")
 
-# ADD TEST PRODUCTS
-print("Adding test products...")
-
-cursor.executemany("""
-INSERT INTO products (name, price, description)
-VALUES (?, ?, ?)
-""", [
-    ("Phone Repair Kit", 19.99, "Fix your phone"),
-    ("Battery Pack", 29.99, "Portable charger"),
-    ("Screen Protector", 9.99, "Protect your screen"),
-    ("Charging Cable", 7.99, "Fast charging cable"),
-    ("Wireless Charger", 24.99, "Charge without wires")
-])
-
 conn.commit()
 conn.close()
 
-print("✅ Database fully reset and ready!")
+print("✅ Database ready!")
